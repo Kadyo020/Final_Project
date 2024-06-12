@@ -1,8 +1,3 @@
-<?php
-require 'config.php';
-
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,7 +31,7 @@ require 'config.php';
 
         .posts-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Adjusted min-width */
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             grid-gap: 20px;
             padding: 20px;
         }
@@ -45,9 +40,8 @@ require 'config.php';
             border: 1px solid #ddd;
             border-radius: 10px;
             padding: 20px;
+            cursor: pointer;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            background-color: #fff; /* Added background color */
-            color: #000; /* Default text color */
         }
 
         .post-item:hover {
@@ -58,12 +52,7 @@ require 'config.php';
         .post-item h3 {
             margin-top: 0;
             font-size: 18px;
-            margin-bottom: 10px; /* Added spacing */
-        }
-
-        .post-item a {
-            text-decoration: none;
-            transition: color 0.3s;
+            color: #333;
         }
 
         .logout-btn {
@@ -77,7 +66,6 @@ require 'config.php';
             transition: background-color 0.3s;
             display: block;
             margin: 20px auto;
-            font-size: 16px; /* Increased font size */
         }
 
         .logout-btn:hover {
@@ -90,44 +78,53 @@ require 'config.php';
         <h1>Posts Page</h1>
     </header>
     <div class="container">
-        <div class="posts-container">
+        <div class="posts-container" id="postLists">
             <?php
-            $dsn = "mysql:host=$host;dbname=$db;charset=UTF8";
-            $options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+                require 'config.php';
 
-            try {
-                $pdo = new PDO($dsn, $user, $password, $options);
-
-                if ($pdo) {
-                    $user_id = $_SESSION['user_id'];
-
-                    $query = "SELECT * FROM `posts` WHERE user_id = :id";
-                    $statement = $pdo->prepare($query);
-                    $statement->execute([':id' => $user_id]);
-
-                    while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-                        $random_color = sprintf('#%06X', mt_rand(0, 0xFFFFFF)); // Generate random color
-                        // Calculate the luminance of the background color
-                        $luminance = 0.2126 * hexdec(substr($random_color, 1, 2)) + 0.7152 * hexdec(substr($random_color, 3, 2)) + 0.0722 * hexdec(substr($random_color, 5, 2));
-                        // Set text color based on luminance
-                        $text_color = ($luminance > 128) ? '#000' : '#fff';
-                        echo '<div class="post-item" style="background-color: ' . $random_color . '; color: ' . $text_color . '">';
-                        echo '<h3><a href="post.php?id=' . $row['id'] . '">' . $row['title'] . '</a></h3>';
-                        // You can include more details if needed
-                        echo '</div>';
-                    }
+                if (!isset($_SESSION['user_id'])) {
+                    header("Location: index.php");
+                    exit;
                 }
-            } catch (PDOException $e) {
-                echo $e->getMessage();
-            }
+
+                $dsn = "mysql:host=$host;dbname=$db;charset=UTF8";
+                $options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+
+                try {
+                    $pdo = new PDO($dsn, $user, $password, $options);
+
+                    if ($pdo) {
+                        $user_id = $_SESSION['user_id'];
+
+                        $query = "SELECT * FROM `posts` WHERE user_id = :id LIMIT 10";
+                        $statement = $pdo->prepare($query);
+                        $statement->execute([':id' => $user_id]);
+
+                        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+                        foreach ($rows as $index => $row) {
+                            $color = generateUniqueColor($index);
+                            echo '<div class="post-item" onclick="window.location.href=\'post.php?id=' . $row['id'] . '\'" style="background-color:' . $color . '">';
+                            echo '<h3>' . htmlspecialchars($row['title']) . '</h3>';
+                            echo '<p>' . htmlspecialchars($row['body']) . '</p>';
+                            echo '</div>';
+                        }
+                    }
+                } catch (PDOException $e) {
+                    echo $e->getMessage();
+                }
+
+                function generateUniqueColor($index) {
+                    $hue = ($index * 137.508) % 360;
+                    return "hsl($hue, 70%, 90%)";
+                }
             ?>
         </div>
         <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
-
     <script>
         function logout() {
-            window.location.href = "index.php";
+            window.location.href = "logout.php";
         }
     </script>
 </body>

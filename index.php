@@ -1,43 +1,3 @@
-<?php
-
-require 'config.php';
-
-$dsn = "mysql:host=$host;dbname=$db;charset=UTF8";
-$options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
-
-try {
-    $pdo = new PDO($dsn, $user, $password, $options);
-
-    if ($pdo) {
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $username = $_POST['username'];
-            $password = $_POST['password'];
-
-            $query = "SELECT * FROM `users` WHERE username = :username";
-            $statement = $pdo->prepare($query);
-            $statement->execute([':username' => $username]);
-
-            $user = $statement->fetch(PDO::FETCH_ASSOC);
-
-            if ($user) {
-                if ('secret123' === $password) {
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['username'] = $user['username'];
-
-                    header("Location: posts.php");
-                    exit;
-                } else {
-                    echo "Invalid password!";
-                }
-            } else {
-                echo "User not found!";
-            }
-        }
-    }
-} catch (PDOException $e) {
-    echo $e->getMessage();
-}
-?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -89,11 +49,28 @@ try {
             outline: none;
             padding: 10px;
             font-size: 16px;
-            transition: all 0.3s ease;
+            background-color: #f9f9f9;
+            transition: border-bottom-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            color: #333;
         }
 
         .form-input:focus {
             border-bottom: 2px solid #0062cc;
+            background-color: #fff;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #aaa;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus::placeholder {
+            color: #007bff;
+            font-size: 12px;
+            transform: translateY(-20px);
+            opacity: 0;
         }
 
         .form-button {
@@ -105,11 +82,13 @@ try {
             padding: 10px;
             font-size: 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .form-button:hover {
             opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -117,10 +96,51 @@ try {
     <div class="login-container">
         <div class="login-header">
             <h2>Login</h2>
+            <?php
+
+require 'config.php';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=UTF8";
+$options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+
+try {
+    $pdo = new PDO($dsn, $user, $password, $options);
+
+    if ($pdo) {
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            $username = $_POST['username'];
+            $password = $_POST['password'];
+
+            $query = "SELECT * FROM `users` WHERE username = :username";
+            $statement = $pdo->prepare($query);
+            $statement->execute([':username' => $username]);
+
+            $user = $statement->fetch(PDO::FETCH_ASSOC);
+
+            if ($user) {
+                if ('secret123' === $password) {
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['username'] = $user['username'];
+
+                    header("Location: posts.php");
+                    exit;
+                } else {
+                    echo "Invalid password!";
+                }
+            } else {
+                echo "User not found!";
+            }
+        }
+    }
+} catch (PDOException $e) {
+    echo $e->getMessage();
+}
+?>
+
         </div>
-        <form class="login-form" id="loginForm" method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
-            <input type="text" name = "username" id="username" class="form-input" placeholder="Enter username" required>
-            <input type="password" name = "password" id="password" class="form-input" placeholder="Enter password" required>
+        <form class="login-form" id="loginForm"  method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
+            <input type="text" name="username" id="username" class="form-input" placeholder="Enter username" required>
+            <input type="password" name="password" id="password" class="form-input" placeholder="Enter password" required>
             <button type="submit" id="submit" class="form-button">Login</button>
         </form>
     </div>
